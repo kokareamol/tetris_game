@@ -59,9 +59,9 @@ resource "aws_security_group" "Jenkins-sg" {
 }
 
 resource "aws_instance" "web" {
-  ami                    = "ami-0a0e5d9c7acc336f1"
-  instance_type          = "t2.medium"
-  key_name               = "kp_nv"
+  ami                    = "ami-0c2af51e265bd5e0e"
+  instance_type          = "t2.large"
+  key_name               = "kp2"
   vpc_security_group_ids = [aws_security_group.Jenkins-sg.id]
   user_data              = templatefile("./install_jenkins.sh", {})
   iam_instance_profile   = aws_iam_instance_profile.example_profile.name

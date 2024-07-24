@@ -1,0 +1,77 @@
+pipeline {
+    agent any
+    
+    tools{
+        jdk 'jdk17'
+        nodejs 'node16'
+    }
+    
+    environment {
+        SCANNER_HOME=tool 'sonar-scanner'
+    }
+
+    stages {
+        stage('git checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/kokareamol/tetris_game.git'
+            }
+        }
+        
+        stage("Sonarqube Analysis "){
+            steps{
+                withSonarQubeEnv('sonar-server') {
+                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=tetris-v1 \
+                    -Dsonar.projectKey=tetris-v1 '''
+                }
+            }
+        }
+        
+        stage("Sonarqube QG"){
+            steps{
+                script {
+                waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token'
+                }
+            }
+        }
+        
+        stage("dependency install"){
+            steps{
+                sh 'npm install'
+            }
+        }
+        
+        // stage('OWASP DP SCAN') {
+        //     steps {
+        //         dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+        //         dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+        //     }
+        // }
+        
+        // stage('TRIVY FS SCAN') {
+        //     steps {
+        //         sh "trivy fs . > trivyfs.txt"
+        //     }
+        // }
+        
+        // stage('docker build and push') {
+        //     steps {
+        //         script {
+        //             withDockerRegistry(credentialsId: 'docker', toolName: 'docker') {
+        //                 sh '''
+        //                 docker build -t tetrisv1 .
+        //                 docker tag tetrisv1 kokareamol/tetrisv1:latest
+        //                 docker push kokareamol/tetrisv1:latest
+        //                 '''
+        //           }
+        //         }
+        //     }
+        // }
+        
+        stage('TRIVY IMAGE SCAN') {
+            steps {
+                sh "trivy image kokareamol/tetrisv1:latest > trivyimage.txt"
+            }
+        }
+        
+    }
+}
